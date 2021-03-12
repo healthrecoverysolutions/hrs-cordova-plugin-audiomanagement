@@ -1,8 +1,8 @@
-# cordova-plugin-audiomanagement
+# hrs-cordova-plugin-audiomanagement
 A plugin to manage audio mode and volume
 
 ## Installation
-`cordova plugin add clovelced-plugin-audiomanagement`
+`cordova plugin add hrs-cordova-plugin-audiomanagement`
 
 ## Supported Platforms
 
