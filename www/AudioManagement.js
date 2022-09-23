@@ -1,15 +1,16 @@
 function AudioManagement(){
   this.AudioMode = {
-      SILENT : 0,
-      VIBRATE : 1,
-      NORMAL : 2
+    SILENT : 0,
+    VIBRATE : 1,
+    NORMAL : 2
   };
 
   this.VolumeType = {
     RING : 0,
     MUSIC : 1,
     NOTIFICATION : 2,
-    SYSTEM : 3
+    SYSTEM : 3,
+    VOICE_CALL: 4
   }
 }
 
