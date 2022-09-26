@@ -22,8 +22,8 @@ AudioManagement.setAudioMode(AudioManagement.AudioMode.NORMAL, function(){}, fun
 AudioManagement.getAudioMode(onSuccess, onError);
 
 AudioManagement.getAudioMode(function(result){
-  console.log('Mode' + result.audioMode);     // will show '2'
-  console.log('Label' + result.label);        // will show 'Normal'
+    console.log('Mode' + result.audioMode);     // will show '2'
+    console.log('Label' + result.label);        // will show 'Normal'
 }, onError);
 ```
 
@@ -45,8 +45,8 @@ AudioManagement.setAudioMode(AudioManagement.VolumeType.RING, 10, function(){}, 
 ```javascript
 AudioManagement.getVolume(type, onSuccess, onError);
 
-AudioManagement.getVolume(AudioManagement.VolumeType.RING, function(result){  
-  console.log('Volume' + result.volume);        // will show '12'
+AudioManagement.getVolume(AudioManagement.VolumeType.RING, function(result){
+    console.log('Volume' + result.volume);        // will show '12'
 }, onError);
 ```
 
@@ -54,8 +54,8 @@ AudioManagement.getVolume(AudioManagement.VolumeType.RING, function(result){
 ```javascript
 AudioManagement.getMaxVolume(type, onSuccess, onError);
 
-AudioManagement.getMaxVolume(AudioManagement.VolumeType.RING, function(result){  
-  console.log('Max volume' + result.maxVolume);        // will show '15'
+AudioManagement.getMaxVolume(AudioManagement.VolumeType.RING, function(result){
+    console.log('Max volume' + result.maxVolume);        // will show '15'
 }, onError);
 ```
 
@@ -64,3 +64,4 @@ AudioManagement.getMaxVolume(AudioManagement.VolumeType.RING, function(result){
 - `AudioManagement.VolumeType.MUSIC` = 1
 - `AudioManagement.VolumeType.NOTIFICATION` = 2
 - `AudioManagement.VolumeType.SYSTEM` = 3
+- `AudioManagement.VolumeType.VOICECALL` = 4

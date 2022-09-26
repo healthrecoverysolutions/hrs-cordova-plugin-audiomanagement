@@ -31,6 +31,7 @@ public class AudioManagement extends CordovaPlugin {
   private static final int TYPE_MUSIC = 1;
   private static final int TYPE_NOTIFICATION = 2;
   private static final int TYPE_SYSTEM = 3;
+  private static final int TYPE_VOICE_CALL = 4;
 
   private static final String LABEL_NORMAL = "Normal";
   private static final String LABEL_SILENT = "Silent";
@@ -49,6 +50,7 @@ public class AudioManagement extends CordovaPlugin {
   private int maxVolumeSystem;
   private int maxVolumeNotification;
   private int maxVolumeMusic;
+  private int maxVolumeVoiceCall;
 
   public void pluginInitialize(){
     this.manager = (AudioManager) this.cordova.getActivity().getSystemService(Context.AUDIO_SERVICE);
@@ -56,6 +58,7 @@ public class AudioManagement extends CordovaPlugin {
     this.maxVolumeNotification = manager.getStreamMaxVolume(AudioManager.STREAM_NOTIFICATION);
     this.maxVolumeSystem = manager.getStreamMaxVolume(AudioManager.STREAM_SYSTEM);
     this.maxVolumeMusic = manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+    this.maxVolumeVoiceCall = manager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
     this.context = this.cordova.getActivity().getApplicationContext();
     this.notificationManager = (NotificationManager) this.context.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
   }
@@ -140,6 +143,9 @@ public class AudioManagement extends CordovaPlugin {
       case TYPE_SYSTEM:
         volume = manager.getStreamVolume(AudioManager.STREAM_SYSTEM);
         break;
+      case TYPE_VOICE_CALL:
+        volume = manager.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
+        break;
     }
 
     return volume;
@@ -162,6 +168,9 @@ public class AudioManagement extends CordovaPlugin {
             break;
           case TYPE_MUSIC:
             manager.setStreamVolume(AudioManager.STREAM_MUSIC, checkVolumeValue(volume, maxVolumeMusic), HIDE_FLAG_UI);
+            break;
+          case TYPE_VOICE_CALL:
+            manager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, checkVolumeValue(volume, maxVolumeVoiceCall), HIDE_FLAG_UI);
             break;
         }
         callbackContext.success();
@@ -233,6 +242,9 @@ public class AudioManagement extends CordovaPlugin {
         break;
       case TYPE_MUSIC:
         max = manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        break;
+      case TYPE_VOICE_CALL:
+        max = manager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
         break;
     }
 
