@@ -68,17 +68,19 @@ public class AudioManagement extends CordovaPlugin {
   }
 
   public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-    Timber.v("execute action = " + action);
+    Timber.d("execute action = " + action);
     boolean returnValue = true;
 
     if(ACTION_SET_MODE.equals(action)){
 
-      final int content = args.getInt(0);
+      final int mode = args.getInt(0);
 
-      if(setAudioMode(content)){
+      if(setAudioMode(mode)){
         callbackContext.success();
       }else{
-        callbackContext.error("Unknown audio mode !");
+        String errorMessage = "Unknown audio mode! " + mode;
+        Timber.e(errorMessage);
+        callbackContext.error(errorMessage);
         returnValue =  false;
       }
 
@@ -99,7 +101,9 @@ public class AudioManagement extends CordovaPlugin {
         vol.put(KEY_SCALED_VOLUME, scaledVolume);
         callbackContext.success(vol);
       }else{
-        callbackContext.error("Unknown volume type !");
+        String errorMessage = "Unknown volume type! " + type;
+        Timber.e(errorMessage);
+        callbackContext.error(errorMessage);
         returnValue =  false;
       }
     } else if(ACTION_SET_VOLUME.equals(action)){
@@ -121,7 +125,7 @@ public class AudioManagement extends CordovaPlugin {
         callbackContext.success(maxVol);
       } else {
         String errorMessage = "Unknown volume type! " + type;
-        Timber.w(errorMessage);
+        Timber.e(errorMessage);
         callbackContext.error(errorMessage);
         returnValue =  false;
       }
@@ -184,7 +188,7 @@ public class AudioManagement extends CordovaPlugin {
             break;
           default:
             String errorMessage = "Unknown type " + type;
-            Timber.w(errorMessage);
+            Timber.e(errorMessage);
             callbackContext.error(errorMessage);
             return;
         }
