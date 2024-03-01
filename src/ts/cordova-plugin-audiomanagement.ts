@@ -93,7 +93,7 @@ export class AudioManagementCordovaInterface {
 		return invoke(`getVolume`, type);
 	}
 
-	public setVolume(type: VolumeType, volume: number, scaled: boolean = false): Promise<void> {
+	public setVolume(type: VolumeType, volume: number, scaled: boolean = true): Promise<void> {
 		return invoke(`setVolume`, type, volume, scaled);
 	}
 
