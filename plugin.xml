@@ -20,7 +20,7 @@
           <param name="android-package" value="com.hrs.audiomanagement.AudioManagement"/>
         </feature>
       </config-file>
-
+      <framework src="com.jakewharton.timber:timber:5.0.1" />
       <source-file src="src/android/AudioManagement.java" target-dir="src/com/hrs/AudioManagement/"/>
     </platform>
 </plugin>

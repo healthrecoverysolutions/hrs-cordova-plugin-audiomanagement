@@ -4,11 +4,28 @@
     "cordova_name": "Audio management plugin",
     "description": "A plugin to manage audio mode and volume",
     "license": "Apache 2.0",
-    "repo": "https://github.com/ScottWaring/hrs-cordova-plugin-audiomanagement",
-    "issue": "https://github.com/ScottWaring/hrs-cordova-plugin-audiomanagement/issues",
+    "main": "./lib/index.js",
+    "module": "./lib/index.js",
+    "types": "./lib/index.d.ts",
+    "scripts": {
+      "build:clean": "rm -rf ./www/* ./lib/*",
+      "build:cordova": "tsc -p tsconfig.cordova.json",
+      "build:es6": "tsc -p tsconfig.es6.json",
+      "build": "run-s build:clean build:cordova build:es6",
+      "version": "run-s build version:sync",
+      "version:sync": "node ./scripts/version-sync.js",
+      "version:patch": "npm version patch",
+      "git:publish": "node ./scripts/version-publish.js",
+      "version:publish": "run-s git:publish",
+      "bump": "run-s version:patch version:publish"
+    },
     "repository": {
         "type": "git",
         "url": "https://github.com/ScottWaring/hrs-cordova-plugin-audiomanagement"
+    },
+    "author": "Cédric CLOVEL, Scott Waring, HRS",
+    "bugs": {
+      "url": "https://github.com/ScottWaring/hrs-cordova-plugin-audiomanagement/issues"
     },
     "keywords": [
         "cordova",
@@ -20,6 +37,10 @@
     "platforms": [
         "android"
     ],
-    "englishdoc": "",
-    "author": "Cédric CLOVEL, Scott Waring, HRS"
+    "devDependencies": {
+        "@types/cordova": "11.0.3",
+        "@types/node": "20.11.24",
+        "npm-run-all": "4.1.5",
+        "typescript": "5.3.3"
+    }
 }

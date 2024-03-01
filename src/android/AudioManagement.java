@@ -13,7 +13,8 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.os.Build;
 import android.provider.Settings;
-import android.util.Log;
+
+import timber.log.Timber;
 
 public class AudioManagement extends CordovaPlugin {
 
@@ -64,7 +65,7 @@ public class AudioManagement extends CordovaPlugin {
   }
 
   public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-
+    Timber.v("execute action = " + action);
     boolean returnValue = true;
 
     if(ACTION_SET_MODE.equals(action)){
@@ -117,9 +118,8 @@ public class AudioManagement extends CordovaPlugin {
         returnValue =  false;
       }
 
-
     }  else {
-      callbackContext.error("AudioManagement."+action+" not found !");
+      callbackContext.error("AudioManagement." + action + " not found !");
       returnValue =  false;
     }
 
@@ -127,6 +127,7 @@ public class AudioManagement extends CordovaPlugin {
   }
 
   private int getVolume(int type) {
+    Timber.d("getVolume() type = " + type);
 
     int volume = -1;
 
@@ -155,6 +156,7 @@ public class AudioManagement extends CordovaPlugin {
     new Runnable(){
       @Override
       public void run() {
+        Timber.d("setVolume() type = " + type + ", volume = " + volume);
         int HIDE_FLAG_UI = 0;
         switch(type){
           case TYPE_RING:
@@ -179,6 +181,7 @@ public class AudioManagement extends CordovaPlugin {
   }
 
   private void getAudioMode(CallbackContext callbackContext) throws JSONException {
+    Timber.d("getAudioMode()");
 
     final JSONObject mode = new JSONObject();
     int audioMode = NORMAL_MODE;
@@ -206,6 +209,7 @@ public class AudioManagement extends CordovaPlugin {
   }
 
   private boolean setAudioMode(int mode){
+    Timber.d("setAudioMode() mode = " + mode);
     switch(mode){
       case SILENT_MODE:
         if(manager.getRingerMode() != AudioManager.RINGER_MODE_SILENT){
@@ -228,6 +232,7 @@ public class AudioManagement extends CordovaPlugin {
   }
 
   private int getMaxVolumeValue(int type){
+    Timber.d("getMaxVolumeValue() type = " + type);
     int max = -1;
 
     switch(type){
