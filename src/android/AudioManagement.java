@@ -106,7 +106,7 @@ public class AudioManagement extends CordovaPlugin {
 
       final int type = args.getInt(0);
       final int volume = args.getInt(1);
-      final boolean scaled = args.getBool(2);
+      final boolean scaled = args.optBoolean(2);
       setVolume(type, volume, scaled, callbackContext);
 
     }  else if(ACTION_GET_MAX_VOLUME.equals(action)){
@@ -290,7 +290,7 @@ public class AudioManagement extends CordovaPlugin {
 
   /**
    * Scales `value` from range [`sourceMin`, `sourceMax`] to range [`destMin`, `destMax`]
-   * 
+   *
    * Example:
    * interpolate(50, 0, 100, 0, 50); // 25, because 50% of 50
    * interpolate(75, 0, 100, -2, 2); // 1, because it is 75% of the total range (negative side included)
