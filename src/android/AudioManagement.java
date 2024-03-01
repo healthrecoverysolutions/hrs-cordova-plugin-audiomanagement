@@ -160,20 +160,25 @@ public class AudioManagement extends CordovaPlugin {
         int HIDE_FLAG_UI = 0;
         switch(type){
           case TYPE_RING:
-            manager.setStreamVolume(AudioManager.STREAM_RING, checkVolumeValue(volume, maxVolumeRing), HIDE_FLAG_UI);
+            manager.setStreamVolume(AudioManager.STREAM_RING, interpolateVolume(volume, maxVolumeRing), HIDE_FLAG_UI);
             break;
           case TYPE_NOTIFICATION:
-            manager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, checkVolumeValue(volume, maxVolumeNotification), HIDE_FLAG_UI);
+            manager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, interpolateVolume(volume, maxVolumeNotification), HIDE_FLAG_UI);
             break;
           case TYPE_SYSTEM:
-            manager.setStreamVolume(AudioManager.STREAM_SYSTEM, checkVolumeValue(volume, maxVolumeSystem), HIDE_FLAG_UI);
+            manager.setStreamVolume(AudioManager.STREAM_SYSTEM, interpolateVolume(volume, maxVolumeSystem), HIDE_FLAG_UI);
             break;
           case TYPE_MUSIC:
-            manager.setStreamVolume(AudioManager.STREAM_MUSIC, checkVolumeValue(volume, maxVolumeMusic), HIDE_FLAG_UI);
+            manager.setStreamVolume(AudioManager.STREAM_MUSIC, interpolateVolume(volume, maxVolumeMusic), HIDE_FLAG_UI);
             break;
           case TYPE_VOICE_CALL:
-            manager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, checkVolumeValue(volume, maxVolumeVoiceCall), HIDE_FLAG_UI);
+            manager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, interpolateVolume(volume, maxVolumeVoiceCall), HIDE_FLAG_UI);
             break;
+          default:
+            String errorMessage = "Unknown type " + type;
+            Timber.w(errorMessage);
+            callbackContext.error(errorMessage);
+            return;
         }
         callbackContext.success();
       }
@@ -256,23 +261,27 @@ public class AudioManagement extends CordovaPlugin {
     return max;
   }
 
-  /**
-   *  Check if the volume is not higher than max value
-   * @param sourceVolume
-   * @param maxVolume
-   * @return
-   */
-  private int checkVolumeValue(int sourceVolume, int maxVolume){
-
-    int volume = sourceVolume;
-
-    if(sourceVolume > maxVolume){
-      volume = maxVolume;
-    } else if(sourceVolume < 0){
-      volume = 0;
-    }
-
-    return volume;
+  private static int clamp(int value, int min, int max) {
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
   }
 
+  /**
+   * Converts `sourceVolume` into the range of `maxVolume`.
+   * Assumes that `sourceVolume` is in the range [0,100].
+   * Also clamps the output to be in range [0,`maxVolume`] if
+   * `sourceVolume` is outside the expected range of [0,100]
+   * 
+   * Example:
+   * sourceVolume = 50, maxVolume = 50
+   * output -> 25 (half of max)
+   */
+  private int interpolateVolume(int sourceVolume, int maxVolume){
+    int volume = clamp(sourceVolume, 0, 100);
+    double ratio = volume / (double)100;
+    volume = (int) Math.round(ratio * maxVolume);
+    volume = clamp(volume, 0, maxVolume);
+    return volume;
+  }
 }
