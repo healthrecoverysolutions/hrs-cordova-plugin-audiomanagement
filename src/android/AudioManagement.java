@@ -34,6 +34,8 @@ public class AudioManagement extends CordovaPlugin {
   private static final int TYPE_SYSTEM = 3;
   private static final int TYPE_VOICE_CALL = 4;
 
+  private static final int SCALED_MAX_VOLUME = 100;
+
   private static final String LABEL_NORMAL = "Normal";
   private static final String LABEL_SILENT = "Silent";
   private static final String LABEL_VIBRATE = "Vibrate";
@@ -41,6 +43,7 @@ public class AudioManagement extends CordovaPlugin {
   private static final String KEY_AUDIO_MODE = "audioMode";
   private static final String KEY_LABEL = "label";
   private static final String KEY_VOLUME = "volume";
+  private static final String KEY_SCALED_VOLUME = "scaledVolume";
   private static final String KEY_MAX_VOLUME = "maxVolume";
 
   private AudioManager manager;
@@ -91,7 +94,9 @@ public class AudioManagement extends CordovaPlugin {
 
       if(volume != -1){
         JSONObject vol = new JSONObject();
+        final int scaledVolume = getVolumePercentage(volume, getMaxVolumeValue(type));
         vol.put(KEY_VOLUME, volume);
+        vol.put(KEY_SCALED_VOLUME, scaledVolume);
         callbackContext.success(vol);
       }else{
         callbackContext.error("Unknown volume type !");
@@ -101,7 +106,8 @@ public class AudioManagement extends CordovaPlugin {
 
       final int type = args.getInt(0);
       final int volume = args.getInt(1);
-      setVolume(type, volume, callbackContext);
+      final boolean scaled = args.getBool(2);
+      setVolume(type, volume, scaled, callbackContext);
 
     }  else if(ACTION_GET_MAX_VOLUME.equals(action)){
 
@@ -109,12 +115,14 @@ public class AudioManagement extends CordovaPlugin {
 
       final int max = getMaxVolumeValue(type);
 
-      if(max != -1){
+      if (max != -1) {
         JSONObject maxVol = new JSONObject();
         maxVol.put(KEY_MAX_VOLUME, max);
         callbackContext.success(maxVol);
-      }else{
-        callbackContext.error("Unknown volume type !");
+      } else {
+        String errorMessage = "Unknown volume type! " + type;
+        Timber.w(errorMessage);
+        callbackContext.error(errorMessage);
         returnValue =  false;
       }
 
@@ -135,14 +143,14 @@ public class AudioManagement extends CordovaPlugin {
       case TYPE_RING:
         volume = manager.getStreamVolume(AudioManager.STREAM_RING);
         break;
-      case TYPE_MUSIC:
-        volume = manager.getStreamVolume(AudioManager.STREAM_MUSIC);
-        break;
       case TYPE_NOTIFICATION:
         volume = manager.getStreamVolume(AudioManager.STREAM_NOTIFICATION);
         break;
       case TYPE_SYSTEM:
         volume = manager.getStreamVolume(AudioManager.STREAM_SYSTEM);
+        break;
+      case TYPE_MUSIC:
+        volume = manager.getStreamVolume(AudioManager.STREAM_MUSIC);
         break;
       case TYPE_VOICE_CALL:
         volume = manager.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
@@ -152,7 +160,7 @@ public class AudioManagement extends CordovaPlugin {
     return volume;
   }
 
-  private void setVolume(final int type, final int volume, final CallbackContext callbackContext){
+  private void setVolume(final int type, final int volume, final boolean scaled, final CallbackContext callbackContext){
     new Runnable(){
       @Override
       public void run() {
@@ -160,19 +168,19 @@ public class AudioManagement extends CordovaPlugin {
         int HIDE_FLAG_UI = 0;
         switch(type){
           case TYPE_RING:
-            manager.setStreamVolume(AudioManager.STREAM_RING, interpolateVolume(volume, maxVolumeRing), HIDE_FLAG_UI);
+            manager.setStreamVolume(AudioManager.STREAM_RING, sanitizeVolume(volume, maxVolumeRing, scaled), HIDE_FLAG_UI);
             break;
           case TYPE_NOTIFICATION:
-            manager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, interpolateVolume(volume, maxVolumeNotification), HIDE_FLAG_UI);
+            manager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, sanitizeVolume(volume, maxVolumeNotification, scaled), HIDE_FLAG_UI);
             break;
           case TYPE_SYSTEM:
-            manager.setStreamVolume(AudioManager.STREAM_SYSTEM, interpolateVolume(volume, maxVolumeSystem), HIDE_FLAG_UI);
+            manager.setStreamVolume(AudioManager.STREAM_SYSTEM, sanitizeVolume(volume, maxVolumeSystem, scaled), HIDE_FLAG_UI);
             break;
           case TYPE_MUSIC:
-            manager.setStreamVolume(AudioManager.STREAM_MUSIC, interpolateVolume(volume, maxVolumeMusic), HIDE_FLAG_UI);
+            manager.setStreamVolume(AudioManager.STREAM_MUSIC, sanitizeVolume(volume, maxVolumeMusic, scaled), HIDE_FLAG_UI);
             break;
           case TYPE_VOICE_CALL:
-            manager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, interpolateVolume(volume, maxVolumeVoiceCall), HIDE_FLAG_UI);
+            manager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, sanitizeVolume(volume, maxVolumeVoiceCall, scaled), HIDE_FLAG_UI);
             break;
           default:
             String errorMessage = "Unknown type " + type;
@@ -261,6 +269,19 @@ public class AudioManagement extends CordovaPlugin {
     return max;
   }
 
+  private int sanitizeVolume(int sourceVolume, int maxVolume, boolean scaled){
+    return scaled ? interpolateVolume(sourceVolume, maxVolume) : clamp(sourceVolume, 0, maxVolume);
+  }
+
+  private int interpolateVolume(int sourceVolume, int maxVolume){
+    return interpolate(sourceVolume, 0, SCALED_MAX_VOLUME, 0, maxVolume);
+  }
+
+  private int getVolumePercentage(int sourceVolume, int maxVolume){
+    return interpolate(sourceVolume, 0, maxVolume, 0, SCALED_MAX_VOLUME);
+  }
+
+  // Forces `value` into range [`min`, `max`]
   private static int clamp(int value, int min, int max) {
     if (value < min) return min;
     if (value > max) return max;
@@ -268,20 +289,15 @@ public class AudioManagement extends CordovaPlugin {
   }
 
   /**
-   * Converts `sourceVolume` into the range of `maxVolume`.
-   * Assumes that `sourceVolume` is in the range [0,100].
-   * Also clamps the output to be in range [0,`maxVolume`] if
-   * `sourceVolume` is outside the expected range of [0,100]
+   * Scales `value` from range [`sourceMin`, `sourceMax`] to range [`destMin`, `destMax`]
    * 
    * Example:
-   * sourceVolume = 50, maxVolume = 50
-   * output -> 25 (half of max)
+   * interpolate(50, 0, 100, 0, 50); // 25, because 50% of 50
+   * interpolate(75, 0, 100, -2, 2); // 1, because it is 75% of the total range (negative side included)
    */
-  private int interpolateVolume(int sourceVolume, int maxVolume){
-    int volume = clamp(sourceVolume, 0, 100);
-    double ratio = volume / (double)100;
-    volume = (int) Math.round(ratio * maxVolume);
-    volume = clamp(volume, 0, maxVolume);
-    return volume;
+  private static int interpolate(int value, int sourceMin, int sourceMax, int destMin, int destMax) {
+    double ratio = clamp(value, sourceMin, sourceMax) / (double)(sourceMax - sourceMin);
+    int result = (int) Math.round(ratio * (destMax - destMin)) + destMin;
+    return clamp(result, destMin, destMax);
   }
 }

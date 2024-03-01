@@ -47,8 +47,9 @@ var AudioManagementCordovaInterface = /** @class */ (function () {
     AudioManagementCordovaInterface.prototype.getVolume = function (type) {
         return invoke("getVolume", type);
     };
-    AudioManagementCordovaInterface.prototype.setVolume = function (type, volume) {
-        return invoke("setVolume", type, volume);
+    AudioManagementCordovaInterface.prototype.setVolume = function (type, volume, scaled) {
+        if (scaled === void 0) { scaled = false; }
+        return invoke("setVolume", type, volume, scaled);
     };
     AudioManagementCordovaInterface.prototype.getMaxVolume = function (type) {
         return invoke("getMaxVolume", type);

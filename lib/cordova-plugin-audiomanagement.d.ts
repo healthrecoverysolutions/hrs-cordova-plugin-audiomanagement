@@ -16,6 +16,7 @@ export interface AudioModeResult {
 }
 export interface VolumeResult {
     volume: number;
+    scaledVolume: number;
 }
 export interface MaxVolumeResult {
     maxVolume: number;
@@ -25,7 +26,7 @@ export declare class AudioManagementCordovaInterface {
     getAudioMode(): Promise<AudioModeResult>;
     setAudioMode(mode: AudioMode): Promise<void>;
     getVolume(type: VolumeType): Promise<VolumeResult>;
-    setVolume(type: VolumeType, volume: number): Promise<void>;
+    setVolume(type: VolumeType, volume: number, scaled?: boolean): Promise<void>;
     getMaxVolume(type: VolumeType): Promise<MaxVolumeResult>;
 }
 export declare const AudioManagement: AudioManagementCordovaInterface;
