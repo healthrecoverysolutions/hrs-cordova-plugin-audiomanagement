@@ -8,16 +8,16 @@
     "module": "./lib/index.js",
     "types": "./lib/index.d.ts",
     "scripts": {
-      "build:clean": "rm -rf ./www/* ./lib/*",
-      "build:cordova": "tsc -p tsconfig.cordova.json",
-      "build:es6": "tsc -p tsconfig.es6.json",
-      "build": "run-s build:clean build:cordova build:es6",
-      "version": "run-s build version:sync",
-      "version:sync": "node ./scripts/version-sync.js",
-      "version:patch": "npm version patch",
-      "git:publish": "node ./scripts/version-publish.js",
-      "version:publish": "run-s git:publish",
-      "bump": "run-s version:patch version:publish"
+        "build:clean": "rm -rf ./www/* ./lib/*",
+        "build:cordova": "tsc -p tsconfig.cordova.json",
+        "build:es6": "tsc -p tsconfig.es6.json",
+        "build": "run-s build:clean build:cordova build:es6",
+        "version": "run-s build version:sync",
+        "version:sync": "node ./scripts/version-sync.js",
+        "version:patch": "npm version patch",
+        "git:publish": "node ./scripts/version-publish.js",
+        "version:publish": "run-s git:publish",
+        "bump": "run-s version:patch version:publish"
     },
     "repository": {
         "type": "git",
@@ -25,7 +25,7 @@
     },
     "author": "Cédric CLOVEL, Scott Waring, HRS",
     "bugs": {
-      "url": "https://github.com/ScottWaring/hrs-cordova-plugin-audiomanagement/issues"
+        "url": "https://github.com/ScottWaring/hrs-cordova-plugin-audiomanagement/issues"
     },
     "keywords": [
         "cordova",
