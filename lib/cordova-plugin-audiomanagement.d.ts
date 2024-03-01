@@ -11,11 +11,18 @@ export declare const enum VolumeType {
     VOICE_CALL = 4
 }
 export interface AudioModeResult {
+    /** Current mode for the target type. */
     audioMode: AudioMode;
+    /** Human-readable display text for the mode. */
     label: string;
 }
 export interface VolumeResult {
+    /**
+     * Raw volume value for the target type, which is in range [0, maxVolume] where
+     * `maxVolume` is an arbitrary number provided by the OS.
+     */
     volume: number;
+    /** Scaled percentage that will be in range [0, 100]. */
     scaledVolume: number;
 }
 export interface MaxVolumeResult {
