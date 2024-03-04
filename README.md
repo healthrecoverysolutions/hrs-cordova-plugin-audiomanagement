@@ -1,67 +1,30 @@
 # hrs-cordova-plugin-audiomanagement
 A plugin to manage audio mode and volume
 
-## Installation
-`cordova plugin add hrs-cordova-plugin-audiomanagement`
+## Usage
 
-## Supported Platforms
+```typescript
+import {AudioManagement, VolumeType} from 'hrs-cordova-plugin-audiomanagement';
 
-- Android
-
-## AUDIO MODE
-- Define the audio mode
-```javascript
-AudioManagement.setAudioMode(audioMode, onSuccess, onError);
-
-// Example
-AudioManagement.setAudioMode(AudioManagement.AudioMode.NORMAL, function(){}, function(){});
+async function changeVolume() {
+    const volumePercentage = 75;
+    await AudioManagement.setVolume(VolumeType.MUSIC, volumePercentage);
+}
 ```
 
-- Get the current audio mode
-```javascript
-AudioManagement.getAudioMode(onSuccess, onError);
+## Contributing
 
-AudioManagement.getAudioMode(function(result){
-    console.log('Mode' + result.audioMode);     // will show '2'
-    console.log('Label' + result.label);        // will show 'Normal'
-}, onError);
-```
+### Prerequisites
 
-### The audio mode
-- `AudioManagement.AudioMode.SILENT` = 0
-- `AudioManagement.AudioMode.VIBRATE` = 1
-- `AudioManagement.AudioMode.NORMAL` = 2
+1. make sure you have [nvm](https://github.com/nvm-sh/nvm) installed
+2. run `nvm use` at the root of the project to use the correct version (install if needed)
+3. run `npm install`
 
-## VOLUME
-- Set the volume
-```javascript
-AudioManagement.setVolume(type, volume, onSuccess, onError);
+### Making changes
 
-// Example
-AudioManagement.setAudioMode(AudioManagement.VolumeType.RING, 10, function(){}, function(){});
-```
+To add a new API or modify existing ones:
 
-- Get the volume of a stream
-```javascript
-AudioManagement.getVolume(type, onSuccess, onError);
-
-AudioManagement.getVolume(AudioManagement.VolumeType.RING, function(result){
-    console.log('Volume' + result.volume);        // will show '12'
-}, onError);
-```
-
-- Get the max volume of a stream
-```javascript
-AudioManagement.getMaxVolume(type, onSuccess, onError);
-
-AudioManagement.getMaxVolume(AudioManagement.VolumeType.RING, function(result){
-    console.log('Max volume' + result.maxVolume);        // will show '15'
-}, onError);
-```
-
-### The volume type
-- `AudioManagement.VolumeType.RING` = 0
-- `AudioManagement.VolumeType.MUSIC` = 1
-- `AudioManagement.VolumeType.NOTIFICATION` = 2
-- `AudioManagement.VolumeType.SYSTEM` = 3
-- `AudioManagement.VolumeType.VOICECALL` = 4
+1. make any necessary changes in the typescript API at `src/ts/cordova-plugin-audiomanagement.ts`
+2. make any necessary changes in android layer at `src/android/AudioManagement.java`
+3. sync the typescript API by running `npm run build`
+4. update the plugin version after changes are made by running the [npm version command](https://docs.npmjs.com/cli/v8/commands/npm-version)
