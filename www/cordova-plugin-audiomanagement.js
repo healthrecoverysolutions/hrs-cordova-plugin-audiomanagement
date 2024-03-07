@@ -54,6 +54,13 @@ var AudioManagementCordovaInterface = /** @class */ (function () {
     AudioManagementCordovaInterface.prototype.getMaxVolume = function (type) {
         return invoke("getMaxVolume", type);
     };
+    AudioManagementCordovaInterface.prototype.getNotificationPolicyAccessState = function () {
+        return invoke("getNotificationPolicyAccessState");
+    };
+    AudioManagementCordovaInterface.prototype.hasNotificationPolicyAccess = function () {
+        return this.getNotificationPolicyAccessState()
+            .then(function (state) { return !!(state === null || state === void 0 ? void 0 : state.isNotificationPolicyAccessGranted); });
+    };
     return AudioManagementCordovaInterface;
 }());
 exports.AudioManagementCordovaInterface = AudioManagementCordovaInterface;
