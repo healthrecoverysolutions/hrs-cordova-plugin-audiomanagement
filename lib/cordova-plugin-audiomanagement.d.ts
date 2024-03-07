@@ -40,5 +40,6 @@ export declare class AudioManagementCordovaInterface {
     getMaxVolume(type: VolumeType): Promise<MaxVolumeResult>;
     getNotificationPolicyAccessState(): Promise<NotificationPolicyAccessState>;
     hasNotificationPolicyAccess(): Promise<boolean>;
+    openNotificationPolicyAccessSettings(): Promise<void>;
 }
 export declare const AudioManagement: AudioManagementCordovaInterface;

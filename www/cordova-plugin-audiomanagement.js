@@ -61,6 +61,9 @@ var AudioManagementCordovaInterface = /** @class */ (function () {
         return this.getNotificationPolicyAccessState()
             .then(function (state) { return !!(state === null || state === void 0 ? void 0 : state.isNotificationPolicyAccessGranted); });
     };
+    AudioManagementCordovaInterface.prototype.openNotificationPolicyAccessSettings = function () {
+        return invoke("openNotificationPolicyAccessSettings");
+    };
     return AudioManagementCordovaInterface;
 }());
 exports.AudioManagementCordovaInterface = AudioManagementCordovaInterface;

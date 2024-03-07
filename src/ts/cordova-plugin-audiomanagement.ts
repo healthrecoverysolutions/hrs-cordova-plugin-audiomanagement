@@ -113,6 +113,10 @@ export class AudioManagementCordovaInterface {
 		return this.getNotificationPolicyAccessState()
 			.then((state) => !!state?.isNotificationPolicyAccessGranted);
 	}
+
+	public openNotificationPolicyAccessSettings(): Promise<void> {
+		return invoke(`openNotificationPolicyAccessSettings`);
+	}
 }
 
 export const AudioManagement = new AudioManagementCordovaInterface();
