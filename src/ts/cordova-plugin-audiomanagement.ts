@@ -62,6 +62,10 @@ export interface AudioModeResult {
 	label: string;
 }
 
+export interface NotificationPolicyAccessState {
+	isNotificationPolicyAccessGranted: boolean;
+}
+
 export interface VolumeResult {
 	/**
 	 * Raw volume value for the target type, which is in range [0, maxVolume] where
@@ -99,6 +103,15 @@ export class AudioManagementCordovaInterface {
 
 	public getMaxVolume(type: VolumeType): Promise<MaxVolumeResult> {
 		return invoke(`getMaxVolume`, type);
+	}
+
+	public getNotificationPolicyAccessState(): Promise<NotificationPolicyAccessState> {
+		return invoke(`getNotificationPolicyAccessState`);
+	}
+
+	public hasNotificationPolicyAccess(): Promise<boolean> {
+		return this.getNotificationPolicyAccessState()
+			.then((state) => !!state?.isNotificationPolicyAccessGranted);
 	}
 }
 

@@ -5,18 +5,26 @@ import org.json.JSONObject;
 import org.json.JSONException;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
+
+import android.app.Activity;
+import android.app.NotificationManager;
 import android.content.Context;
+import android.content.Intent;
 import android.media.AudioManager;
+import android.os.Build;
 
 import timber.log.Timber;
 
 public class AudioManagement extends CordovaPlugin {
 
-  public static final String ACTION_SET_MODE = "setAudioMode";
-  public static final String ACTION_GET_MODE = "getAudioMode";
-  public static final String ACTION_SET_VOLUME = "setVolume";
-  public static final String ACTION_GET_VOLUME = "getVolume";
-  public static final String ACTION_GET_MAX_VOLUME = "getMaxVolume";
+  private static final String ACTION_SET_MODE = "setAudioMode";
+  private static final String ACTION_GET_MODE = "getAudioMode";
+  private static final String ACTION_SET_VOLUME = "setVolume";
+  private static final String ACTION_GET_VOLUME = "getVolume";
+  private static final String ACTION_GET_MAX_VOLUME = "getMaxVolume";
+  // These are required for SDK 23 and up
+  private static final String ACTION_GET_NOTIFICATION_ACCESS_POLICY_STATE = "getNotificationPolicyAccessState";
+  private static final String ACTION_OPEN_NOTIFICATION_ACCESS_POLICY_SETTINGS = "openNotificationPolicyAccessSettings";
 
   private static final int SILENT_MODE = 0;
   private static final int VIBRATE_MODE = 1;
@@ -39,8 +47,10 @@ public class AudioManagement extends CordovaPlugin {
   private static final String KEY_VOLUME = "volume";
   private static final String KEY_SCALED_VOLUME = "scaledVolume";
   private static final String KEY_MAX_VOLUME = "maxVolume";
+  private static final String KEY_NOTIFICATION_POLICY_ACCESS_GRANTED = "isNotificationPolicyAccessGranted";
 
   private AudioManager manager;
+  private NotificationManager notificationManager;
 
   private int maxVolumeRing;
   private int maxVolumeSystem;
@@ -49,7 +59,9 @@ public class AudioManagement extends CordovaPlugin {
   private int maxVolumeVoiceCall;
 
   public void pluginInitialize() {
-    this.manager = (AudioManager) this.cordova.getActivity().getSystemService(Context.AUDIO_SERVICE);
+    Activity activity = this.cordova.getActivity();
+    this.manager = (AudioManager) activity.getSystemService(Context.AUDIO_SERVICE);
+    this.notificationManager = (NotificationManager) activity.getSystemService(Context.NOTIFICATION_SERVICE);
     this.maxVolumeRing = manager.getStreamMaxVolume(AudioManager.STREAM_RING);
     this.maxVolumeNotification = manager.getStreamMaxVolume(AudioManager.STREAM_NOTIFICATION);
     this.maxVolumeSystem = manager.getStreamMaxVolume(AudioManager.STREAM_SYSTEM);
@@ -81,6 +93,12 @@ public class AudioManagement extends CordovaPlugin {
       final int type = args.getInt(0);
       getMaxVolumeAction(type, callbackContext);
 
+    } else if (ACTION_GET_NOTIFICATION_ACCESS_POLICY_STATE.equals(action)) {
+        getNotificationPolicyAccessState(callbackContext);
+
+    } else if (ACTION_OPEN_NOTIFICATION_ACCESS_POLICY_SETTINGS.equals(action)) {
+        openNotificationPolicyAccessSettings(callbackContext);
+
     } else {
       notifyActionError(callbackContext, "AudioManagement." + action + " not found !");
       return false;
@@ -92,6 +110,22 @@ public class AudioManagement extends CordovaPlugin {
   private void notifyActionError(CallbackContext callbackContext, String errorMessage) {
       Timber.e(errorMessage);
       callbackContext.error(errorMessage);
+  }
+
+  private void getNotificationPolicyAccessState(CallbackContext callbackContext) throws JSONException {
+      JSONObject result = new JSONObject();
+      boolean granted = true;
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+          granted = this.notificationManager.isNotificationPolicyAccessGranted();
+      }
+      result.put(KEY_NOTIFICATION_POLICY_ACCESS_GRANTED, granted);
+      callbackContext.success(result);
+  }
+
+  private void openNotificationPolicyAccessSettings(CallbackContext callbackContext) {
+      Intent intent = new Intent(android.provider.Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+      cordova.getActivity().startActivity(intent);
+      callbackContext.success();
   }
 
   private void setModeAction(int mode, CallbackContext callbackContext) {
