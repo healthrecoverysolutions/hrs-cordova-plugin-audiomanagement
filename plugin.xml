@@ -20,6 +20,9 @@
           <param name="android-package" value="com.hrs.audiomanagement.AudioManagement"/>
         </feature>
       </config-file>
+      <config-file target="AndroidManifest.xml" parent="/manifest">
+        <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+      </config-file>
       <framework src="com.jakewharton.timber:timber:5.0.1" />
       <source-file src="src/android/AudioManagement.java" target-dir="src/com/hrs/audiomanagement/"/>
     </platform>
