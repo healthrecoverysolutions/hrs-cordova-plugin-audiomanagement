@@ -13,6 +13,8 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.os.Build;
 
+import java.util.ArrayList;
+
 import timber.log.Timber;
 
 public class AudioManagement extends CordovaPlugin {
@@ -22,6 +24,7 @@ public class AudioManagement extends CordovaPlugin {
     private static final String ACTION_SET_VOLUME = "setVolume";
     private static final String ACTION_GET_VOLUME = "getVolume";
     private static final String ACTION_GET_MAX_VOLUME = "getMaxVolume";
+    private static final String ACTION_SET_VOLUME_BATCH = "setVolumeBatch";
     // These are required for SDK 23 and up
     private static final String ACTION_GET_NOTIFICATION_ACCESS_POLICY_STATE = "getNotificationPolicyAccessState";
     private static final String ACTION_OPEN_NOTIFICATION_ACCESS_POLICY_SETTINGS = "openNotificationPolicyAccessSettings";
@@ -35,6 +38,8 @@ public class AudioManagement extends CordovaPlugin {
     private static final int TYPE_NOTIFICATION = 2;
     private static final int TYPE_SYSTEM = 3;
     private static final int TYPE_VOICE_CALL = 4;
+    private static final int TYPE_UNKNOWN = -1;
+    private static final int HIDE_FLAG_UI = 0;
 
     private static final int SCALED_MAX_VOLUME = 100;
 
@@ -48,25 +53,19 @@ public class AudioManagement extends CordovaPlugin {
     private static final String KEY_SCALED_VOLUME = "scaledVolume";
     private static final String KEY_MAX_VOLUME = "maxVolume";
     private static final String KEY_NOTIFICATION_POLICY_ACCESS_GRANTED = "isNotificationPolicyAccessGranted";
+    private static final String KEY_STREAMS = "streams";
+    private static final String KEY_STREAM_TYPE = "streamType";
+    private static final String KEY_ERRORS = "errors";
+    private static final String KEY_SCALED = "scaled";
+    private static final String KEY_ERROR_MESSAGE = "errorMessage";
 
     private AudioManager manager;
     private NotificationManager notificationManager;
-
-    private int maxVolumeRing;
-    private int maxVolumeSystem;
-    private int maxVolumeNotification;
-    private int maxVolumeMusic;
-    private int maxVolumeVoiceCall;
 
     public void pluginInitialize() {
         Activity activity = this.cordova.getActivity();
         this.manager = (AudioManager) activity.getSystemService(Context.AUDIO_SERVICE);
         this.notificationManager = (NotificationManager) activity.getSystemService(Context.NOTIFICATION_SERVICE);
-        this.maxVolumeRing = manager.getStreamMaxVolume(AudioManager.STREAM_RING);
-        this.maxVolumeNotification = manager.getStreamMaxVolume(AudioManager.STREAM_NOTIFICATION);
-        this.maxVolumeSystem = manager.getStreamMaxVolume(AudioManager.STREAM_SYSTEM);
-        this.maxVolumeMusic = manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        this.maxVolumeVoiceCall = manager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
     }
 
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
@@ -88,6 +87,9 @@ public class AudioManagement extends CordovaPlugin {
             final int volume = args.getInt(1);
             final boolean scaled = args.optBoolean(2);
             setVolume(type, volume, scaled, callbackContext);
+
+        } else if (ACTION_SET_VOLUME_BATCH.equals(action)) {
+            setVolumeBatch(args.getJSONObject(0), callbackContext);
 
         } else if (ACTION_GET_MAX_VOLUME.equals(action)) {
             final int type = args.getInt(0);
@@ -168,30 +170,9 @@ public class AudioManagement extends CordovaPlugin {
         Timber.d("getVolume() type = %s", type);
 
         int volume = -1;
-        int streamType = -1;
+        int streamType = convertStreamTypeToNative(type);
 
-        switch (type) {
-            case TYPE_RING:
-                streamType = AudioManager.STREAM_RING;
-                break;
-            case TYPE_NOTIFICATION:
-                streamType = AudioManager.STREAM_NOTIFICATION;
-                break;
-            case TYPE_SYSTEM:
-                streamType = AudioManager.STREAM_SYSTEM;
-                break;
-            case TYPE_MUSIC:
-                streamType = AudioManager.STREAM_MUSIC;
-                break;
-            case TYPE_VOICE_CALL:
-                streamType = AudioManager.STREAM_VOICE_CALL;
-                break;
-            default:
-                Timber.w("getVolume() unknown type! %s", type);
-                break;
-        }
-
-        if (streamType >= 0) {
+        if (streamType != TYPE_UNKNOWN) {
             try {
                 volume = manager.getStreamVolume(streamType);
                 Timber.d("getVolume() loaded volume = " + volume + " for type = " + type);
@@ -203,45 +184,81 @@ public class AudioManagement extends CordovaPlugin {
         return volume;
     }
 
+    private void setVolumeBatch(JSONObject volumeConfig, final CallbackContext callbackContext) {
+        cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ArrayList<JSONObject> errors = new ArrayList<>();
+
+                try {
+                    JSONArray streams = volumeConfig.getJSONArray(KEY_STREAMS);
+                    int streamCount = streams.length();
+                    Timber.d("setVolumeBatch() updating %s streams", streamCount);
+                    for (int i = 0; i < streamCount; i++) {
+                        try {
+                            final JSONObject streamConfig = streams.getJSONObject(i);
+                            if (streamConfig == null) {
+                                Timber.w("setVolumeBatch() skipping invalid config at index %s", i);
+                                continue;
+                            }
+
+                            final int type = streamConfig.getInt(KEY_STREAM_TYPE);
+                            final int streamType = convertStreamTypeToNative(type);
+                            if (streamType == TYPE_UNKNOWN) {
+                                Timber.w("setVolumeBatch() invalid stream type at index %s", i);
+                                errors.add(new JSONObject()
+                                    .put(KEY_STREAM_TYPE, type)
+                                    .put(KEY_ERROR_MESSAGE, "unknown stream type: " + type));
+                                continue;
+                            }
+
+                            final int inputVolume = streamConfig.getInt(KEY_VOLUME);
+                            if (inputVolume < 0 || inputVolume > 100) {
+                                Timber.w("setVolumeBatch() invalid volume at index %s", i);
+                                errors.add(new JSONObject()
+                                    .put(KEY_STREAM_TYPE, type)
+                                    .put(KEY_ERROR_MESSAGE, "invalid volume level: " + inputVolume));
+                                continue;
+                            }
+
+                            final boolean scaled = streamConfig.optBoolean(KEY_SCALED, true);
+                            final int maxVolume = manager.getStreamMaxVolume(streamType);
+                            final int targetVolume = sanitizeVolume(inputVolume, maxVolume, scaled);
+                            Timber.v("set stream %s = %s percent (actual = %s)", streamType, inputVolume, targetVolume);
+                            manager.setStreamVolume(streamType, targetVolume, HIDE_FLAG_UI);
+
+                        } catch (Exception e) {
+                            Timber.e(e, "caught error attempting to set stream");
+                            errors.add(new JSONObject()
+                                .put(KEY_ERROR_MESSAGE, e.getMessage()));
+                        }
+                    }
+
+                    callbackContext.success(new JSONObject().put(KEY_ERRORS, errors));
+                } catch (Exception e) {
+                    notifyActionError(callbackContext, "setVolumeBatch error: " + e.getMessage());
+                }
+            }
+        });
+    }
+
     private void setVolume(final int type, final int volume, final boolean scaled, final CallbackContext callbackContext) {
         cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Timber.d("setVolume() type = " + type + ", volume = " + volume);
-                final int HIDE_FLAG_UI = 0;
-                int streamType;
-                int maxVolume;
+                Timber.v("setVolume() type = " + type + ", volume = " + volume);
+                int streamType = convertStreamTypeToNative(type);
 
-                switch (type) {
-                    case TYPE_RING:
-                        streamType = AudioManager.STREAM_RING;
-                        maxVolume = maxVolumeRing;
-                        break;
-                    case TYPE_NOTIFICATION:
-                        streamType = AudioManager.STREAM_NOTIFICATION;
-                        maxVolume = maxVolumeNotification;
-                        break;
-                    case TYPE_SYSTEM:
-                        streamType = AudioManager.STREAM_SYSTEM;
-                        maxVolume = maxVolumeSystem;
-                        break;
-                    case TYPE_MUSIC:
-                        streamType = AudioManager.STREAM_MUSIC;
-                        maxVolume = maxVolumeMusic;
-                        break;
-                    case TYPE_VOICE_CALL:
-                        streamType = AudioManager.STREAM_VOICE_CALL;
-                        maxVolume = maxVolumeVoiceCall;
-                        break;
-                    default:
-                        String errorMessage = "Unknown type " + type;
-                        Timber.e(errorMessage);
-                        callbackContext.error(errorMessage);
-                        return;
+                if (streamType == TYPE_UNKNOWN) {
+                    String errorMessage = "Unknown type " + type;
+                    Timber.e(errorMessage);
+                    callbackContext.error(errorMessage);
+                    return;
                 }
 
+                int maxVolume = manager.getStreamMaxVolume(type);
                 int sanitizedVolume = sanitizeVolume(volume, maxVolume, scaled);
-                Timber.i("setStreamVolume()"
+                Timber.d("setStreamVolume()"
                     + " streamType = " + streamType
                     + ", volume = " + volume
                     + ", maxVolume = " + maxVolume
@@ -330,39 +347,37 @@ public class AudioManagement extends CordovaPlugin {
     private int getMaxVolumeValue(int type) {
         Timber.d("getMaxVolumeValue() type = %s", type);
         int max = -1;
-        int streamType = -1;
+        int streamType = convertStreamTypeToNative(type);
 
-        switch (type) {
-            case TYPE_RING:
-                streamType = AudioManager.STREAM_RING;
-                break;
-            case TYPE_NOTIFICATION:
-                streamType = AudioManager.STREAM_NOTIFICATION;
-                break;
-            case TYPE_SYSTEM:
-                streamType = AudioManager.STREAM_SYSTEM;
-                break;
-            case TYPE_MUSIC:
-                streamType = AudioManager.STREAM_MUSIC;
-                break;
-            case TYPE_VOICE_CALL:
-                streamType = AudioManager.STREAM_VOICE_CALL;
-                break;
-            default:
-                Timber.w("getMaxVolumeValue() unknown type! %s", type);
-                break;
-        }
-
-        if (streamType >= 0) {
+        if (streamType != TYPE_UNKNOWN) {
             try {
                 max = manager.getStreamMaxVolume(streamType);
                 Timber.d("getMaxVolumeValue() loaded max = " + max + " for type = " + type);
             } catch (Exception e) {
                 Timber.e("getMaxVolumeValue() ERROR: %s", e.getMessage());
             }
+        } else {
+            Timber.w("getMaxVolumeValue() unknown type! %s", type);
         }
 
         return max;
+    }
+
+    private int convertStreamTypeToNative(final int type) {
+        switch (type) {
+            case TYPE_RING:
+                return AudioManager.STREAM_RING;
+            case TYPE_NOTIFICATION:
+                return AudioManager.STREAM_NOTIFICATION;
+            case TYPE_SYSTEM:
+                return AudioManager.STREAM_SYSTEM;
+            case TYPE_MUSIC:
+                return AudioManager.STREAM_MUSIC;
+            case TYPE_VOICE_CALL:
+                return AudioManager.STREAM_VOICE_CALL;
+            default:
+                return TYPE_UNKNOWN;
+        }
     }
 
     private int sanitizeVolume(int sourceVolume, int maxVolume, boolean scaled) {
