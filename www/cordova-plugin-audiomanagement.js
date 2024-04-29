@@ -36,8 +36,7 @@ function invoke(method) {
     return cordovaExecPromise(PLUGIN_NAME, method, args);
 }
 function unwrapBatchStreamSetResult(result) {
-    var _a;
-    if (((_a = result === null || result === void 0 ? void 0 : result.errors) === null || _a === void 0 ? void 0 : _a.length) > 0) {
+    if (Array.isArray(result === null || result === void 0 ? void 0 : result.errors) && result.errors.length > 0) {
         return Promise.reject(result);
     }
     return Promise.resolve();

@@ -100,7 +100,7 @@ export interface BatchStreamSetResult {
 }
 
 function unwrapBatchStreamSetResult(result: BatchStreamSetResult): Promise<void> {
-	if (result?.errors?.length > 0) {
+	if (Array.isArray(result?.errors) && result.errors.length > 0) {
 		return Promise.reject(result);
 	}
 	return Promise.resolve();
