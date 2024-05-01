@@ -31,6 +31,21 @@ export interface VolumeResult {
 export interface MaxVolumeResult {
     maxVolume: number;
 }
+export interface StreamSetConfig {
+    streamType: number;
+    volume: number;
+    scaled?: boolean;
+}
+export interface BatchStreamSetConfig {
+    streams: StreamSetConfig[];
+}
+export interface StreamSetResult {
+    streamType?: number;
+    errorMessage: string;
+}
+export interface BatchStreamSetResult {
+    errors: StreamSetResult[];
+}
 export declare class AudioManagementCordovaInterface {
     constructor();
     getAudioMode(): Promise<AudioModeResult>;
@@ -41,5 +56,7 @@ export declare class AudioManagementCordovaInterface {
     getNotificationPolicyAccessState(): Promise<NotificationPolicyAccessState>;
     hasNotificationPolicyAccess(): Promise<boolean>;
     openNotificationPolicyAccessSettings(): Promise<void>;
+    setVolumeBatchForResult(config: BatchStreamSetConfig): Promise<BatchStreamSetResult>;
+    setVolumeBatch(config: BatchStreamSetConfig): Promise<void>;
 }
 export declare const AudioManagement: AudioManagementCordovaInterface;

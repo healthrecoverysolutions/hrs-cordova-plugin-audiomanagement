@@ -80,6 +80,32 @@ export interface MaxVolumeResult {
 	maxVolume: number;
 }
 
+export interface StreamSetConfig {
+	streamType: number;
+	volume: number;
+	scaled?: boolean; // defaults to true if not provided
+}
+
+export interface BatchStreamSetConfig {
+	streams: StreamSetConfig[];
+}
+
+export interface StreamSetResult {
+	streamType?: number;
+	errorMessage: string;
+}
+
+export interface BatchStreamSetResult {
+	errors: StreamSetResult[];
+}
+
+function unwrapBatchStreamSetResult(result: BatchStreamSetResult): Promise<void> {
+	if (Array.isArray(result?.errors) && result.errors.length > 0) {
+		return Promise.reject(result);
+	}
+	return Promise.resolve();
+}
+
 export class AudioManagementCordovaInterface {
 
 	constructor() {
@@ -116,6 +142,14 @@ export class AudioManagementCordovaInterface {
 
 	public openNotificationPolicyAccessSettings(): Promise<void> {
 		return invoke(`openNotificationPolicyAccessSettings`);
+	}
+
+	public setVolumeBatchForResult(config: BatchStreamSetConfig): Promise<BatchStreamSetResult> {
+		return invoke('setVolumeBatch', config);
+	}
+
+	public setVolumeBatch(config: BatchStreamSetConfig): Promise<void> {
+		return this.setVolumeBatchForResult(config).then(unwrapBatchStreamSetResult);
 	}
 }
 
