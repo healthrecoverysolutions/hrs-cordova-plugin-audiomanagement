@@ -9,6 +9,7 @@ export {
     StreamSetResult,
     BatchStreamSetConfig,
     BatchStreamSetResult,
+    VolumeListenerResult,
     AudioManagementCordovaInterface,
     AudioManagement
 } from './cordova-plugin-audiomanagement';

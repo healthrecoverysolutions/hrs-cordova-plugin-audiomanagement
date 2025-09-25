@@ -25,5 +25,7 @@
       </config-file>
       <framework src="com.jakewharton.timber:timber:5.0.1" />
       <source-file src="src/android/AudioManagement.java" target-dir="src/com/hrs/audiomanagement/"/>
+      <source-file src="src/android/Utils.java" target-dir="src/com/hrs/audiomanagement/"/>
+      <source-file src="src/android/VolumeContentObserver.java" target-dir="src/com/hrs/audiomanagement/"/>
     </platform>
 </plugin>
