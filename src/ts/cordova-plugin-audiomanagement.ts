@@ -100,8 +100,11 @@ export interface BatchStreamSetResult {
 }
 
 export interface VolumeListenerResult {
-    musicVolume: number;
-    ringVolume: number;
+    ring: number;
+    notification: number;
+    system: number;
+    music: number;
+    voice: number;
 }
 
 function unwrapBatchStreamSetResult(result: BatchStreamSetResult): Promise<void> {

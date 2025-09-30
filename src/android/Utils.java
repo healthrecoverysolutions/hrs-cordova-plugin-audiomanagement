@@ -40,4 +40,16 @@ class Utils {
             default -> TYPE_UNKNOWN;
         };
     }
+
+
+    public static void setVolume(AudioManager audioManager, int streamType, int volume) {
+        int maxVolume = audioManager.getStreamMaxVolume(streamType);
+        int targetVolume = Math.max(0, Math.min(volume, maxVolume));
+
+        audioManager.setStreamVolume(
+                streamType,
+                targetVolume,
+                0  // No flags - silent change without UI
+        );
+    }
 }

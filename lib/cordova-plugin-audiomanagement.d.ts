@@ -47,8 +47,11 @@ export interface BatchStreamSetResult {
     errors: StreamSetResult[];
 }
 export interface VolumeListenerResult {
-    musicVolume: number;
-    ringVolume: number;
+    ring: number;
+    notification: number;
+    system: number;
+    music: number;
+    voice: number;
 }
 export declare class AudioManagementCordovaInterface {
     constructor();

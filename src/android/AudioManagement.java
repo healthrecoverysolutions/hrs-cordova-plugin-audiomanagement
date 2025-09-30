@@ -184,10 +184,21 @@ public class AudioManagement extends CordovaPlugin {
         callbackContext.success(maxVol);
     }
 
+    /**
+     * @see VolumeContentObserver#stopApplyChanges(boolean)
+     * @param isApplyChangesStop
+     */
+    private void stopVolumeObserverApplyChanges(boolean isApplyChangesStop) {
+        if (volumeObserver != null) this.volumeObserver.stopApplyChanges(isApplyChangesStop);
+    }
+
     private void setVolumeBatch(JSONObject volumeConfig, final CallbackContext callbackContext) {
+        stopVolumeObserverApplyChanges(true);
+
         cordova.getActivity().runOnUiThread(() -> {
             ArrayList<JSONObject> errors = new ArrayList<>();
 
+            // Stop tot don't have a loop effect
             try {
                 JSONArray streams = volumeConfig.getJSONArray(KEY_STREAMS);
                 int streamCount = streams.length();
@@ -205,8 +216,8 @@ public class AudioManagement extends CordovaPlugin {
                         if (streamType == Utils.TYPE_UNKNOWN) {
                             Timber.w("setVolumeBatch() invalid stream type at index %s", i);
                             errors.add(new JSONObject()
-                                .put(KEY_STREAM_TYPE, type)
-                                .put(KEY_ERROR_MESSAGE, "unknown stream type: " + type));
+                                    .put(KEY_STREAM_TYPE, type)
+                                    .put(KEY_ERROR_MESSAGE, "unknown stream type: " + type));
                             continue;
                         }
 
@@ -214,8 +225,8 @@ public class AudioManagement extends CordovaPlugin {
                         if (inputVolume < 0 || inputVolume > 100) {
                             Timber.w("setVolumeBatch() invalid volume at index %s", i);
                             errors.add(new JSONObject()
-                                .put(KEY_STREAM_TYPE, type)
-                                .put(KEY_ERROR_MESSAGE, "invalid volume level: " + inputVolume));
+                                    .put(KEY_STREAM_TYPE, type)
+                                    .put(KEY_ERROR_MESSAGE, "invalid volume level: " + inputVolume));
                             continue;
                         }
 
@@ -224,17 +235,19 @@ public class AudioManagement extends CordovaPlugin {
                         final int targetVolume = sanitizeVolume(inputVolume, maxVolume, scaled);
                         Timber.v("set stream %s = %s percent (actual = %s)", streamType, inputVolume, targetVolume);
                         manager.setStreamVolume(streamType, targetVolume, HIDE_FLAG_UI);
-
                     } catch (Exception e) {
                         Timber.e(e, "caught error attempting to set stream");
                         errors.add(new JSONObject()
-                            .put(KEY_ERROR_MESSAGE, e.getMessage()));
+                                .put(KEY_ERROR_MESSAGE, e.getMessage()));
                     }
                 }
 
                 callbackContext.success(new JSONObject().put(KEY_ERRORS, errors));
             } catch (Exception e) {
                 notifyActionError(callbackContext, "setVolumeBatch error: " + e.getMessage());
+            } finally {
+                // Restart
+                stopVolumeObserverApplyChanges(false);
             }
         });
     }
@@ -266,6 +279,8 @@ public class AudioManagement extends CordovaPlugin {
     }
 
     private void setVolume(final int type, final int volume, final boolean scaled, final CallbackContext callbackContext) {
+        stopVolumeObserverApplyChanges(true);
+
         cordova.getActivity().runOnUiThread(() -> {
             Timber.v("setVolume() type = " + type + ", volume = " + volume);
             int streamType = Utils.convertStreamTypeToNative(type);
@@ -280,16 +295,18 @@ public class AudioManagement extends CordovaPlugin {
             int maxVolume = manager.getStreamMaxVolume(type);
             int sanitizedVolume = sanitizeVolume(volume, maxVolume, scaled);
             Timber.d("setStreamVolume()"
-                + " streamType = " + streamType
-                + ", volume = " + volume
-                + ", maxVolume = " + maxVolume
-                + ", sanitizedVolume = " + sanitizedVolume);
+                    + " streamType = " + streamType
+                    + ", volume = " + volume
+                    + ", maxVolume = " + maxVolume
+                    + ", sanitizedVolume = " + sanitizedVolume);
 
             try {
                 manager.setStreamVolume(streamType, sanitizedVolume, HIDE_FLAG_UI);
                 callbackContext.success();
             } catch (Exception e) {
                 notifyActionError(callbackContext, "setStreamVolume error: " + e.getMessage());
+            } finally {
+                stopVolumeObserverApplyChanges(false);
             }
         });
     }
@@ -398,6 +415,7 @@ public class AudioManagement extends CordovaPlugin {
     @Override
     public void onDestroy() {
         stopVolumeListener(null);
+        if (volumeObserver != null) volumeObserver.cleanup();
         super.onDestroy();
     }
 }
