@@ -31,6 +31,9 @@ public class AudioManagement extends CordovaPlugin {
     private static final String ACTION_SET_VOLUME_BATCH = "setVolumeBatch";
     private static final String ACTION_START_VOLUME_LISTENER = "startVolumeListener";
     private static final String ACTION_STOP_VOLUME_LISTENER = "stopVolumeListener";
+
+    private static final String ACTION_REQUEST_VOLUME_CHANGE_TO_LISTENER = "requestVolumeChangeToListener";
+
     // These are required for SDK 23 and up
     private static final String ACTION_GET_NOTIFICATION_ACCESS_POLICY_STATE = "getNotificationPolicyAccessState";
     private static final String ACTION_OPEN_NOTIFICATION_ACCESS_POLICY_SETTINGS = "openNotificationPolicyAccessSettings";
@@ -118,6 +121,8 @@ public class AudioManagement extends CordovaPlugin {
         } else if (ACTION_GET_MAX_VOLUME.equals(action)) {
             final int type = args.getInt(0);
             getMaxVolumeAction(type, callbackContext);
+        } else if (ACTION_REQUEST_VOLUME_CHANGE_TO_LISTENER.equals(action)) {
+            requestVolumeChangeToListener(callbackContext);
         } else if (ACTION_GET_NOTIFICATION_ACCESS_POLICY_STATE.equals(action)) {
             getNotificationPolicyAccessState(callbackContext);
         } else if (ACTION_OPEN_NOTIFICATION_ACCESS_POLICY_SETTINGS.equals(action)) {
@@ -185,8 +190,8 @@ public class AudioManagement extends CordovaPlugin {
     }
 
     /**
-     * @see VolumeContentObserver#stopApplyChanges(boolean)
      * @param isApplyChangesStop
+     * @see VolumeContentObserver#stopApplyChanges(boolean)
      */
     private void stopVolumeObserverApplyChanges(boolean isApplyChangesStop) {
         if (volumeObserver != null) this.volumeObserver.stopApplyChanges(isApplyChangesStop);
@@ -269,6 +274,7 @@ public class AudioManagement extends CordovaPlugin {
     private void stopVolumeListener(@Nullable CallbackContext callbackContext) {
         Timber.v("stopVolumeListener");
         if (volumeObserver != null) {
+            volumeObserver.cleanup();
             cordova.getActivity().getContentResolver().unregisterContentObserver(volumeObserver);
             volumeObserver = null;
         }
@@ -398,6 +404,15 @@ public class AudioManagement extends CordovaPlugin {
         }
 
         return max;
+    }
+
+    private void requestVolumeChangeToListener(CallbackContext callbackContext) {
+        if (volumeObserver != null) {
+            volumeObserver.requestVolumeChangeToListener();
+            callbackContext.success("Current state emitted");
+        } else {
+            callbackContext.error("Volume listener not started");
+        }
     }
 
     private int sanitizeVolume(int sourceVolume, int maxVolume, boolean scaled) {

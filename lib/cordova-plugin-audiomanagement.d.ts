@@ -67,5 +67,6 @@ export declare class AudioManagementCordovaInterface {
     setVolumeBatch(config: BatchStreamSetConfig): Promise<void>;
     startVolumeListener(successCallback: (result: VolumeListenerResult) => void, errorCallback?: (error: any) => void): void;
     stopVolumeListener(successCallback?: () => void, errorCallback?: (error: any) => void): void;
+    requestVolumeChangeToListener(): Promise<void>;
 }
 export declare const AudioManagement: AudioManagementCordovaInterface;

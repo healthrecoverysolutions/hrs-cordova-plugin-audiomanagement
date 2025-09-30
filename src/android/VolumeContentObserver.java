@@ -33,6 +33,7 @@ class VolumeContentObserver extends ContentObserver {
     // Flag to check when it's syncing and don't make Android loop over and over
     private boolean isSyncing = false;
     private boolean didFailedSync = false;
+
     // Flag to don't loop when changes are done programmatically, e.g when user press on + or - in
     // volume settings in the app.
     private boolean isApplyChangesStop = false;
@@ -99,11 +100,21 @@ class VolumeContentObserver extends ContentObserver {
         }
     }
 
+
     @Override
     public void onChange(boolean selfChange, Uri uri) {
         super.onChange(selfChange, uri);
+        syncAndNotify(null);
+    }
 
-        Integer changedVolume = detectVolumeChange();
+    private void syncAndNotify(@Nullable Integer volume) {
+        Integer changedVolume;
+
+        if (volume == null) {
+            changedVolume = detectVolumeChange();
+        } else {
+            changedVolume = volume;
+        }
 
         if (isApplyChangesStop || callbackContext == null || changedVolume == null || isSyncing)
             return;
@@ -112,6 +123,12 @@ class VolumeContentObserver extends ContentObserver {
 
         // If an error happens, cancel emitting values to FE.
         if (didFailedSync) return;
+
+        notifyFront();
+    }
+
+    private void notifyFront() {
+        if (callbackContext == null) return;
 
         try {
             JSONObject volumeInfo = makePluginMessage();
@@ -143,11 +160,11 @@ class VolumeContentObserver extends ContentObserver {
         try {
             Timber.d("Syncing all volumes to: %s", targetVolume);
 
-            setVolume(audioManager, Utils.TYPE_RING, targetVolume);
-            setVolume(audioManager, Utils.TYPE_NOTIFICATION, targetVolume);
-            setVolume(audioManager, Utils.TYPE_SYSTEM, targetVolume);
-            setVolume(audioManager, Utils.TYPE_MUSIC, targetVolume);
-            setVolume(audioManager, Utils.TYPE_VOICE_CALL, targetVolume);
+            setVolume(audioManager, TYPE_RING, targetVolume);
+            setVolume(audioManager, TYPE_NOTIFICATION, targetVolume);
+            setVolume(audioManager, TYPE_SYSTEM, targetVolume);
+            setVolume(audioManager, TYPE_MUSIC, targetVolume);
+            setVolume(audioManager, TYPE_VOICE_CALL, targetVolume);
 
             // Update with latest values
             changeLatestVolumeState();
@@ -169,12 +186,17 @@ class VolumeContentObserver extends ContentObserver {
     @Nullable
     private Integer detectVolumeChange() {
         // Get current volumes
-        int ring = Utils.getVolume(audioManager, Utils.TYPE_RING);
-        int notification = Utils.getVolume(audioManager, Utils.TYPE_NOTIFICATION);
-        int system = Utils.getVolume(audioManager, Utils.TYPE_SYSTEM);
-        int music = Utils.getVolume(audioManager, Utils.TYPE_MUSIC);
-        int voice = Utils.getVolume(audioManager, Utils.TYPE_VOICE_CALL);
+        int ring = getVolume(audioManager, TYPE_RING);
+        int notification = getVolume(audioManager, TYPE_NOTIFICATION);
+        int system = getVolume(audioManager, TYPE_SYSTEM);
+        int music = getVolume(audioManager, TYPE_MUSIC);
+        int voice = getVolume(audioManager, TYPE_VOICE_CALL);
 
+        // Check media first
+        if (music != lastMusicVolume) {
+            Timber.d("Music volume changed: " + lastMusicVolume + " -> " + music);
+            return music;
+        }
         if (ring != lastRingVolume) {
             Timber.d("Ring volume changed: " + lastRingVolume + " -> " + ring);
             return ring;
@@ -186,10 +208,6 @@ class VolumeContentObserver extends ContentObserver {
         if (system != lastSystemVolume) {
             Timber.d("System volume changed: " + lastSystemVolume + " -> " + system);
             return system;
-        }
-        if (music != lastMusicVolume) {
-            Timber.d("Music volume changed: " + lastMusicVolume + " -> " + music);
-            return music;
         }
         if (voice != lastVoiceVolume) {
             Timber.d("Voice volume changed: " + lastVoiceVolume + " -> " + voice);
@@ -218,5 +236,13 @@ class VolumeContentObserver extends ContentObserver {
 
     public void cleanup() {
         clearFlaResetFlagRunnable();
+    }
+
+    public void requestVolumeChangeToListener() {
+        // Set volume to trigger the listener
+        int targetVolume = getVolume(audioManager, TYPE_MUSIC);
+        syncAndNotify(targetVolume);
+
+        Timber.d("Requested volume sync with TYPE_MUSIC");
     }
 }

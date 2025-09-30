@@ -167,6 +167,10 @@ export class AudioManagementCordovaInterface {
     public stopVolumeListener(successCallback?: () => void, errorCallback?: (error: any) => void): void {
         cordovaExec<void>(PLUGIN_NAME, 'stopVolumeListener', successCallback, errorCallback, []);
     }
+
+	public requestVolumeChangeToListener() {
+        return invoke('requestVolumeChangeToListener');
+    }
 }
 
 export const AudioManagement = new AudioManagementCordovaInterface();
