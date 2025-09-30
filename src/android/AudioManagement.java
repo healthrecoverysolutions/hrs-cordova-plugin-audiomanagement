@@ -203,7 +203,6 @@ public class AudioManagement extends CordovaPlugin {
         cordova.getActivity().runOnUiThread(() -> {
             ArrayList<JSONObject> errors = new ArrayList<>();
 
-            // Stop tot don't have a loop effect
             try {
                 JSONArray streams = volumeConfig.getJSONArray(KEY_STREAMS);
                 int streamCount = streams.length();
