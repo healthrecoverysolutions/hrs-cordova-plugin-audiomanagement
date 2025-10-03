@@ -99,6 +99,14 @@ export interface BatchStreamSetResult {
 	errors: StreamSetResult[];
 }
 
+export interface VolumeListenerResult {
+    ring: number;
+    notification: number;
+    system: number;
+    music: number;
+    voice: number;
+}
+
 function unwrapBatchStreamSetResult(result: BatchStreamSetResult): Promise<void> {
 	if (Array.isArray(result?.errors) && result.errors.length > 0) {
 		return Promise.reject(result);
@@ -151,6 +159,18 @@ export class AudioManagementCordovaInterface {
 	public setVolumeBatch(config: BatchStreamSetConfig): Promise<void> {
 		return this.setVolumeBatchForResult(config).then(unwrapBatchStreamSetResult);
 	}
+
+	public startVolumeListener(successCallback: (result: VolumeListenerResult) => void, errorCallback?: (error: any) => void): void {
+        cordovaExec<VolumeListenerResult>(PLUGIN_NAME, 'startVolumeListener', successCallback, errorCallback, []);
+    }
+
+    public stopVolumeListener(successCallback?: () => void, errorCallback?: (error: any) => void): void {
+        cordovaExec<void>(PLUGIN_NAME, 'stopVolumeListener', successCallback, errorCallback, []);
+    }
+
+	public requestVolumeChangeToListener() {
+        return invoke('requestVolumeChangeToListener');
+    }
 }
 
 export const AudioManagement = new AudioManagementCordovaInterface();
