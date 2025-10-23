@@ -59,7 +59,6 @@ export declare class AudioManagementCordovaInterface {
     setAudioMode(mode: AudioMode): Promise<void>;
     getVolume(type: VolumeType): Promise<VolumeResult>;
     setVolume(type: VolumeType, volume: number, scaled?: boolean): Promise<void>;
-    getMaxVolume(type: VolumeType): Promise<MaxVolumeResult>;
     getNotificationPolicyAccessState(): Promise<NotificationPolicyAccessState>;
     hasNotificationPolicyAccess(): Promise<boolean>;
     openNotificationPolicyAccessSettings(): Promise<void>;
