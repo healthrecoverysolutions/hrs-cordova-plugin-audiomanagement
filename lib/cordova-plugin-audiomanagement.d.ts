@@ -20,13 +20,7 @@ export interface NotificationPolicyAccessState {
     isNotificationPolicyAccessGranted: boolean;
 }
 export interface VolumeResult {
-    /**
-     * Raw volume value for the target type, which is in range [0, maxVolume] where
-     * `maxVolume` is an arbitrary number provided by the OS.
-     */
-    volume: number;
-    /** Scaled percentage that will be in range [0, 100]. */
-    scaledVolume: number;
+    volumePercentage: number;
 }
 export interface MaxVolumeResult {
     maxVolume: number;
