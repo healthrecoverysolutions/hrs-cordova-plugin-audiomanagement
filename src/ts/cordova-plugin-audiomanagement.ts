@@ -135,10 +135,6 @@ export class AudioManagementCordovaInterface {
 		return invoke(`setVolume`, type, volume, scaled);
 	}
 
-	public getMaxVolume(type: VolumeType): Promise<MaxVolumeResult> {
-		return invoke(`getMaxVolume`, type);
-	}
-
 	public getNotificationPolicyAccessState(): Promise<NotificationPolicyAccessState> {
 		return invoke(`getNotificationPolicyAccessState`);
 	}

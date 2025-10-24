@@ -5,8 +5,8 @@ import static com.hrs.audiomanagement.Utils.TYPE_NOTIFICATION;
 import static com.hrs.audiomanagement.Utils.TYPE_RING;
 import static com.hrs.audiomanagement.Utils.TYPE_SYSTEM;
 import static com.hrs.audiomanagement.Utils.TYPE_VOICE_CALL;
-import static com.hrs.audiomanagement.Utils.getVolume;
-import static com.hrs.audiomanagement.Utils.setVolume;
+import static com.hrs.audiomanagement.Utils.getVolumePercentage;
+import static com.hrs.audiomanagement.Utils.setVolumePercentage;
 
 import android.database.ContentObserver;
 import android.media.AudioManager;
@@ -107,13 +107,13 @@ class VolumeContentObserver extends ContentObserver {
         syncAndNotify(null);
     }
 
-    private void syncAndNotify(@Nullable Integer volume) {
+    private void syncAndNotify(@Nullable Integer volumePercentage) {
         Integer changedVolume;
 
-        if (volume == null) {
+        if (volumePercentage == null) {
             changedVolume = detectVolumeChange();
         } else {
-            changedVolume = volume;
+            changedVolume = volumePercentage;
         }
 
         if (isApplyChangesStop || callbackContext == null || changedVolume == null || isSyncing)
@@ -138,8 +138,8 @@ class VolumeContentObserver extends ContentObserver {
             callbackContext.sendPluginResult(result);
         } catch (JSONException e) {
             PluginResult result = new PluginResult(
-                    PluginResult.Status.ERROR,
-                    "Error getting volume info: " + e.getMessage()
+                PluginResult.Status.ERROR,
+                "Error getting volume info: " + e.getMessage()
             );
             result.setKeepCallback(true);
             callbackContext.sendPluginResult(result);
@@ -147,11 +147,11 @@ class VolumeContentObserver extends ContentObserver {
     }
 
     private void changeLatestVolumeState() {
-        lastRingVolume = getVolume(audioManager, TYPE_RING);
-        lastNotificationVolume = getVolume(audioManager, TYPE_NOTIFICATION);
-        lastSystemVolume = getVolume(audioManager, TYPE_SYSTEM);
-        lastMusicVolume = getVolume(audioManager, TYPE_MUSIC);
-        lastVoiceVolume = getVolume(audioManager, TYPE_VOICE_CALL);
+        lastRingVolume = getVolumePercentage(audioManager, TYPE_RING);
+        lastNotificationVolume = getVolumePercentage(audioManager, TYPE_NOTIFICATION);
+        lastSystemVolume = getVolumePercentage(audioManager, TYPE_SYSTEM);
+        lastMusicVolume = getVolumePercentage(audioManager, TYPE_MUSIC);
+        lastVoiceVolume = getVolumePercentage(audioManager, TYPE_VOICE_CALL);
     }
 
     private void syncAllVolumes(int targetVolume) {
@@ -160,11 +160,11 @@ class VolumeContentObserver extends ContentObserver {
         try {
             Timber.d("Syncing all volumes to: %s", targetVolume);
 
-            setVolume(audioManager, TYPE_RING, targetVolume);
-            setVolume(audioManager, TYPE_NOTIFICATION, targetVolume);
-            setVolume(audioManager, TYPE_SYSTEM, targetVolume);
-            setVolume(audioManager, TYPE_MUSIC, targetVolume);
-            setVolume(audioManager, TYPE_VOICE_CALL, targetVolume);
+            setVolumePercentage(audioManager, TYPE_RING, targetVolume);
+            setVolumePercentage(audioManager, TYPE_NOTIFICATION, targetVolume);
+            setVolumePercentage(audioManager, TYPE_SYSTEM, targetVolume);
+            setVolumePercentage(audioManager, TYPE_MUSIC, targetVolume);
+            setVolumePercentage(audioManager, TYPE_VOICE_CALL, targetVolume);
 
             // Update with latest values
             changeLatestVolumeState();
@@ -186,11 +186,11 @@ class VolumeContentObserver extends ContentObserver {
     @Nullable
     private Integer detectVolumeChange() {
         // Get current volumes
-        int ring = getVolume(audioManager, TYPE_RING);
-        int notification = getVolume(audioManager, TYPE_NOTIFICATION);
-        int system = getVolume(audioManager, TYPE_SYSTEM);
-        int music = getVolume(audioManager, TYPE_MUSIC);
-        int voice = getVolume(audioManager, TYPE_VOICE_CALL);
+        int ring = getVolumePercentage(audioManager, TYPE_RING);
+        int notification = getVolumePercentage(audioManager, TYPE_NOTIFICATION);
+        int system = getVolumePercentage(audioManager, TYPE_SYSTEM);
+        int music = getVolumePercentage(audioManager, TYPE_MUSIC);
+        int voice = getVolumePercentage(audioManager, TYPE_VOICE_CALL);
 
         // Check media first
         if (music != lastMusicVolume) {
@@ -219,11 +219,11 @@ class VolumeContentObserver extends ContentObserver {
     private JSONObject makePluginMessage() throws JSONException {
         JSONObject volumeInfo = new JSONObject();
 
-        int ring = getVolume(audioManager, TYPE_RING);
-        int notification = getVolume(audioManager, TYPE_NOTIFICATION);
-        int system = getVolume(audioManager, TYPE_SYSTEM);
-        int music = getVolume(audioManager, TYPE_MUSIC);
-        int voice = getVolume(audioManager, TYPE_VOICE_CALL);
+        int ring = getVolumePercentage(audioManager, TYPE_RING);
+        int notification = getVolumePercentage(audioManager, TYPE_NOTIFICATION);
+        int system = getVolumePercentage(audioManager, TYPE_SYSTEM);
+        int music = getVolumePercentage(audioManager, TYPE_MUSIC);
+        int voice = getVolumePercentage(audioManager, TYPE_VOICE_CALL);
 
         volumeInfo.put("ring", ring);
         volumeInfo.put("notification", notification);
@@ -240,7 +240,7 @@ class VolumeContentObserver extends ContentObserver {
 
     public void requestVolumeChangeToListener() {
         // Set volume to trigger the listener
-        int targetVolume = getVolume(audioManager, TYPE_MUSIC);
+        int targetVolume = getVolumePercentage(audioManager, TYPE_MUSIC);
         syncAndNotify(targetVolume);
 
         Timber.d("Requested volume sync with TYPE_MUSIC");
