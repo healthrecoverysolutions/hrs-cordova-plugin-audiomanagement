@@ -160,7 +160,8 @@ class VolumeContentObserver extends ContentObserver {
         try {
             Timber.d("Syncing all volumes to: %s", targetVolume);
 
-            setVolumePercentage(audioManager, TYPE_RING, targetVolume);
+            // The 10 value is required to DON'T impact Do Not Disturb mode
+            setVolumePercentage(audioManager, TYPE_RING, Math.max(targetVolume, 10));
             setVolumePercentage(audioManager, TYPE_NOTIFICATION, targetVolume);
             setVolumePercentage(audioManager, TYPE_SYSTEM, targetVolume);
             setVolumePercentage(audioManager, TYPE_MUSIC, targetVolume);
